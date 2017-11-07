@@ -17,6 +17,8 @@ import org.hyperledger.fabric.sdk.exception.ProposalException;
 import org.rauschig.jarchivelib.Archiver;
 import org.rauschig.jarchivelib.ArchiverFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -28,15 +30,19 @@ import java.util.concurrent.CompletableFuture;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+
 @Service
+@PropertySource("classpath:chaincode.properties")
 public class ChaincodeService {
 
-//    private ChaincodeEndorsementPolicy chaincodeEndorsementPolicy;
+    @Value("${chaincode.basedir}")
+    private String chaincodeBasedir;
 
-//    @Autowired
-//    public ChaincodeService(ChaincodeEndorsementPolicy chaincodeEndorsementPolicy) {
-//        this.chaincodeEndorsementPolicy = chaincodeEndorsementPolicy;
-//    }
+    @Value("${chaincode.source.dir}")
+    private String chaincodeSourceDir;
+
+    @Value("${chaincode.endorsement.policy.config}")
+    private String chaincodeEndorsementPolicyConfig;
 
     public CompletableFuture<BlockEvent.TransactionEvent> instantiateChaincode(HFClient client, ChaincodeID chaincodeId, Channel channel, Orderer orderer, Collection<Peer> peers) throws InvalidArgumentException, IOException, ChaincodeEndorsementPolicyParseException, ProposalException {
         InstantiateProposalRequest instantiateProposalRequest = client.newInstantiationProposalRequest();
@@ -44,7 +50,6 @@ public class ChaincodeService {
         instantiateProposalRequest.setChaincodeID(chaincodeId);
         instantiateProposalRequest.setFcn("init");
         instantiateProposalRequest.setArgs(new String[]{"someArg", "0"});
-//        instantiateProposalRequest.setChaincodeEndorsementPolicy(chaincodeEndorsementPolicy);
 
         Map<String, byte[]> tm = new HashMap<>();
         tm.put("HyperLedgerFabric", "InstantiateProposalRequest:JavaSDK".getBytes(UTF_8));
@@ -65,17 +70,18 @@ public class ChaincodeService {
     }
 
     public void installChaincode(HFClient client, ChaincodeID chaincodeId, Collection<Peer> peers, File tarGzFile) throws InvalidArgumentException, ProposalException, IOException {
+        extractChaincode(tarGzFile);
         InstallProposalRequest installProposalRequest = client.newInstallProposalRequest();
         installProposalRequest.setChaincodeID(chaincodeId);
-//        installProposalRequest.setChaincodeEndorsementPolicy(chaincodeEndorsementPolicy);
 
-        File destination = new File("/tmp");
-
-        Archiver archiver = ArchiverFactory.createArchiver("tar", "gz");
-        archiver.extract(tarGzFile, destination);
-
-        installProposalRequest.setChaincodeSourceLocation(new File("/tmp"));
+        installProposalRequest.setChaincodeSourceLocation(new File(chaincodeSourceDir));
         installProposalRequest.setChaincodeVersion(chaincodeId.getVersion());
+
+        ChaincodeEndorsementPolicy endorsementPolicy = getChaincodeEndorsementPolicy();
+
+        if (endorsementPolicy != null) {
+            installProposalRequest.setChaincodeEndorsementPolicy(endorsementPolicy);
+        }
 
         Collection<ProposalResponse> proposalResponses = client.sendInstallProposal(installProposalRequest, peers);
 
@@ -86,6 +92,40 @@ public class ChaincodeService {
                 System.out.println(String.format("FAILED to install proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName()));
             }
         }
+    }
+
+    private void extractChaincode(File tarGzFile) {
+        File destination = new File(chaincodeBasedir);
+        Archiver archiver = ArchiverFactory.createArchiver("tar", "gz");
+
+        try {
+            archiver.extract(tarGzFile, destination);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private ChaincodeEndorsementPolicy getChaincodeEndorsementPolicy () {
+        File config = new File(chaincodeEndorsementPolicyConfig);
+
+        if (!config.exists()) {
+            System.out.println("Endorsement policy config not set.");
+
+            return null;
+        }
+
+        ChaincodeEndorsementPolicy chaincodeEndorsementPolicy = new ChaincodeEndorsementPolicy();
+
+        try {
+            chaincodeEndorsementPolicy.fromYamlFile(config);
+        } catch (IOException | ChaincodeEndorsementPolicyParseException e) {
+            e.printStackTrace();
+            System.out.println("Cannot obtain endorsement policies from file.");
+
+            return null;
+        }
+
+        return chaincodeEndorsementPolicy;
     }
 }
 

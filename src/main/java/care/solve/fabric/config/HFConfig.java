@@ -169,17 +169,4 @@ public class HFConfig {
         return channel;
     }
 
-//    @Bean(name = "chaincodeEndorsementPolicy")
-//    public ChaincodeEndorsementPolicy getChaincodeEndorsementPolicy () {
-//        File file = new File(hfProperties.getEndorsementPolicy());
-//
-//        ChaincodeEndorsementPolicy chaincodeEndorsementPolicy = new ChaincodeEndorsementPolicy();
-//        try {
-//            chaincodeEndorsementPolicy.fromYamlFile(file);
-//        } catch (IOException | ChaincodeEndorsementPolicyParseException e) {
-//            e.printStackTrace();
-//        }
-//
-//        return chaincodeEndorsementPolicy;
-//    }
 }
