@@ -16,7 +16,6 @@ public class UserService {
     private SampleStore defaultStore;
     private SampleUser adminUser;
 
-    private HFProperties hfProperties;
     private HFProperties.Organization clinicOrg;
 
     public static final String org = "org1.department1";
@@ -26,7 +25,6 @@ public class UserService {
         this.hfcaAdminClient = client;
         this.defaultStore = defaultStore;
         this.adminUser = adminUser;
-        this.hfProperties = hfProperties;
 
         this.clinicOrg = hfProperties.getOrgs().get("clinic");
     }
