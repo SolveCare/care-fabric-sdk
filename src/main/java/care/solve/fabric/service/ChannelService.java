@@ -36,11 +36,21 @@ public class ChannelService {
     public Channel connectToChannel(
             String channelName,
             HFClient client,
+            List<Peer> peers,
             Orderer orderer,
-            EventHub eventHub) throws InvalidArgumentException, TransactionException {
+            EventHub eventHub) throws InvalidArgumentException, TransactionException, ProposalException {
         Channel newChannel = client.newChannel(channelName);
+
         newChannel.addOrderer(orderer);
+        peers.forEach(peer -> {
+            try {
+                newChannel.addPeer(peer);
+            } catch (InvalidArgumentException e) {
+                e.printStackTrace();
+            }
+        });
         newChannel.addEventHub(eventHub);
+
         newChannel.initialize();
 
         return newChannel;

@@ -161,7 +161,7 @@ public class HFConfig {
 
         Channel channel;
         if (channelService.isChannelExists(hfProperties.getChannel().getName(), clinicPeers.get(0), client)) {
-            channel = channelService.connectToChannel(hfProperties.getChannel().getName(), client, orderer, eventHub);
+            channel = channelService.connectToChannel(hfProperties.getChannel().getName(), client, clinicPeers, orderer, eventHub);
         } else {
             channel = channelService.constructChannel(hfProperties.getChannel().getName(), client, peerAdminUser, clinicPeers, orderer, eventHub);
         }
