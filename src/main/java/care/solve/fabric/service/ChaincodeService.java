@@ -1,5 +1,6 @@
 package care.solve.fabric.service;
 
+import care.solve.fabric.config.ChaincodeProperties;
 import com.google.common.collect.ImmutableSet;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.ChaincodeEndorsementPolicy;
@@ -17,8 +18,6 @@ import org.hyperledger.fabric.sdk.exception.ProposalException;
 import org.rauschig.jarchivelib.Archiver;
 import org.rauschig.jarchivelib.ArchiverFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -32,17 +31,14 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 
 @Service
-@PropertySource("classpath:chaincode.properties")
 public class ChaincodeService {
 
-    @Value("${chaincode.basedir}")
-    private String chaincodeBasedir;
+    private ChaincodeProperties chaincodeProperties;
 
-    @Value("${chaincode.source.dir}")
-    private String chaincodeSourceDir;
-
-    @Value("${chaincode.endorsement.policy.config}")
-    private String chaincodeEndorsementPolicyConfig;
+    @Autowired
+    public ChaincodeService(ChaincodeProperties chaincodeProperties) {
+        this.chaincodeProperties = chaincodeProperties;
+    }
 
     public CompletableFuture<BlockEvent.TransactionEvent> instantiateChaincode(HFClient client, ChaincodeID chaincodeId, Channel channel, Orderer orderer, Collection<Peer> peers) throws InvalidArgumentException, IOException, ChaincodeEndorsementPolicyParseException, ProposalException {
         InstantiateProposalRequest instantiateProposalRequest = client.newInstantiationProposalRequest();
@@ -74,7 +70,7 @@ public class ChaincodeService {
         InstallProposalRequest installProposalRequest = client.newInstallProposalRequest();
         installProposalRequest.setChaincodeID(chaincodeId);
 
-        installProposalRequest.setChaincodeSourceLocation(new File(chaincodeSourceDir));
+        installProposalRequest.setChaincodeSourceLocation(new File(chaincodeProperties.getSourceDir()));
         installProposalRequest.setChaincodeVersion(chaincodeId.getVersion());
 
         ChaincodeEndorsementPolicy endorsementPolicy = getChaincodeEndorsementPolicy();
@@ -95,7 +91,7 @@ public class ChaincodeService {
     }
 
     private void extractChaincode(File tarGzFile) {
-        File destination = new File(chaincodeBasedir);
+        File destination = new File(chaincodeProperties.getBaseDir());
         Archiver archiver = ArchiverFactory.createArchiver("tar", "gz");
 
         try {
@@ -106,7 +102,7 @@ public class ChaincodeService {
     }
 
     private ChaincodeEndorsementPolicy getChaincodeEndorsementPolicy () {
-        File config = new File(chaincodeEndorsementPolicyConfig);
+        File config = new File(chaincodeProperties.getEndorsementPolicyFile());
 
         if (!config.exists()) {
             System.out.println("Endorsement policy config not set.");
