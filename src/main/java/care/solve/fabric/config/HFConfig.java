@@ -142,8 +142,8 @@ public class HFConfig {
     @Bean(name = "chaincodeId")
     public ChaincodeID getChaincodeId() {
         final String CHAIN_CODE_NAME = "scheduleChaincode_go";
-        final String CHAIN_CODE_PATH = "care.solve.schedule";
-        final String CHAIN_CODE_VERSION = "3";
+        final String CHAIN_CODE_PATH = "solvecare-chaincode";
+        final String CHAIN_CODE_VERSION = "1";
 
         return ChaincodeID.newBuilder().setName(CHAIN_CODE_NAME)
                 .setVersion(CHAIN_CODE_VERSION)
