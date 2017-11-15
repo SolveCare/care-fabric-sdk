@@ -1,15 +1,7 @@
 package care.solve.fabric.service;
 
 import com.google.protobuf.ByteString;
-import org.hyperledger.fabric.sdk.BlockEvent;
-import org.hyperledger.fabric.sdk.ChaincodeEndorsementPolicy;
-import org.hyperledger.fabric.sdk.ChaincodeID;
-import org.hyperledger.fabric.sdk.Channel;
-import org.hyperledger.fabric.sdk.HFClient;
-import org.hyperledger.fabric.sdk.Peer;
-import org.hyperledger.fabric.sdk.ProposalResponse;
-import org.hyperledger.fabric.sdk.QueryByChaincodeRequest;
-import org.hyperledger.fabric.sdk.TransactionProposalRequest;
+import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,18 +18,17 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @Service
 public class TransactionService {
 
-//    private ChaincodeEndorsementPolicy chaincodeEndorsementPolicy;
-//
-//    @Autowired
-//    public TransactionService(ChaincodeEndorsementPolicy chaincodeEndorsementPolicy) {
-//        this.chaincodeEndorsementPolicy = chaincodeEndorsementPolicy;
-//    }
+    private ChaincodeIDFactory chaincodeIDFactory;
 
+    @Autowired
+    public TransactionService(ChaincodeIDFactory chaincodeIDFactory) {
+        this.chaincodeIDFactory = chaincodeIDFactory;
+    }
 
-    public CompletableFuture<BlockEvent.TransactionEvent> sendInvokeTransaction(HFClient client, ChaincodeID chaincodeId, Channel healthChannel, Collection<Peer> peers, String func, String[] args) {
+    public CompletableFuture<BlockEvent.TransactionEvent> sendInvokeTransaction(HFClient client, Channel healthChannel, Collection<Peer> peers, String func, String[] args) {
         try {
             TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
-            transactionProposalRequest.setChaincodeID(chaincodeId);
+            transactionProposalRequest.setChaincodeID(chaincodeIDFactory.getCurrentChaincodeID());
             transactionProposalRequest.setFcn(func);
             transactionProposalRequest.setProposalWaitTime(20000L);
             transactionProposalRequest.setArgs(args);
@@ -57,12 +48,12 @@ public class TransactionService {
         }
     }
 
-    public ByteString sendQueryTransaction(HFClient client, ChaincodeID chaincodeId, Channel healthChannel, String func, String[] args) throws IOException {
+    public ByteString sendQueryTransaction(HFClient client, Channel healthChannel, String func, String[] args) throws IOException {
         try {
             QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
             queryByChaincodeRequest.setFcn(func);
             queryByChaincodeRequest.setArgs(args);
-            queryByChaincodeRequest.setChaincodeID(chaincodeId);
+            queryByChaincodeRequest.setChaincodeID(chaincodeIDFactory.getCurrentChaincodeID());
 
 //            queryByChaincodeRequest.setChaincodeEndorsementPolicy(chaincodeEndorsementPolicy);
 
