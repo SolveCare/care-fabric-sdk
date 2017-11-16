@@ -1,15 +1,7 @@
 package care.solve.fabric.config;
 
 import care.solve.fabric.service.ChannelService;
-import org.hyperledger.fabric.sdk.ChaincodeEndorsementPolicy;
-import org.hyperledger.fabric.sdk.ChaincodeID;
-import org.hyperledger.fabric.sdk.Channel;
-import org.hyperledger.fabric.sdk.EventHub;
-import org.hyperledger.fabric.sdk.HFClient;
-import org.hyperledger.fabric.sdk.Orderer;
-import org.hyperledger.fabric.sdk.Peer;
-import org.hyperledger.fabric.sdk.User;
-import org.hyperledger.fabric.sdk.exception.ChaincodeEndorsementPolicyParseException;
+import org.hyperledger.fabric.sdk.*;
 import org.hyperledger.fabric.sdk.exception.CryptoException;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
@@ -23,7 +15,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -134,20 +125,9 @@ public class HFConfig {
         properties.setProperty("sslProvider", "openSSL");
         properties.setProperty("negotiationType", "TLS");
 
-        properties.setProperty("ordererWaitTimeMilliSecs", "20000");
+        properties.setProperty("ordererWaitTimeMilliSecs", "90000");
 
         return properties;
-    }
-
-    @Bean(name = "chaincodeId")
-    public ChaincodeID getChaincodeId() {
-        final String CHAIN_CODE_NAME = "scheduleChaincode_go";
-        final String CHAIN_CODE_PATH = "solvecare-chaincode";
-        final String CHAIN_CODE_VERSION = "1";
-
-        return ChaincodeID.newBuilder().setName(CHAIN_CODE_NAME)
-                .setVersion(CHAIN_CODE_VERSION)
-                .setPath(CHAIN_CODE_PATH).build();
     }
 
     @Bean(name = "healthChannel")
