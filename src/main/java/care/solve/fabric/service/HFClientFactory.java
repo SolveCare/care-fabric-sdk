@@ -1,13 +1,10 @@
 package care.solve.fabric.service;
 
-import care.solve.fabric.entity.SampleStore;
-import care.solve.fabric.entity.SampleUser;
 import org.hyperledger.fabric.sdk.HFClient;
+import org.hyperledger.fabric.sdk.User;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.session.SessionAuthenticationException;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -18,29 +15,50 @@ public class HFClientFactory {
 
     private static final Map<String, HFClient> HF_CLIENT_MAP = new HashMap<>();
 
+    private User sampleUser;
+
     @Autowired
-    private SampleStore defaultStore;
+    public HFClientFactory(@Qualifier("sampleUser") User sampleUser) {
+        this.sampleUser = sampleUser;
+    }
+
+
+//    @Autowired
+//    private SampleStore defaultStore;
+
+//    public HFClient getClient() {
+//        HFClient client;
+//        try {
+//            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//
+//            if (authentication == null) throw new SessionAuthenticationException("User must be logged in!");
+//
+//            String userName = authentication.getName();
+//
+//            if (HF_CLIENT_MAP.containsKey(userName)) {
+//                return HF_CLIENT_MAP.get(userName);
+//            }
+//
+//            SampleUser user = defaultStore.getMember(userName, UserService.org);
+//            client = HFClient.createNewInstance();
+//            client.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
+//            client.setUserContext(user);
+//            HF_CLIENT_MAP.put(userName, client);
+//        } catch (Exception e) {
+//            throw new RuntimeException(e);
+//        }
+//        return client;
+//    }
 
     public HFClient getClient() {
         HFClient client;
         try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-            if (authentication == null) throw new SessionAuthenticationException("User must be logged in!");
-
-            String userName = authentication.getName();
-
-            if (HF_CLIENT_MAP.containsKey(userName)) {
-                return HF_CLIENT_MAP.get(userName);
-            }
-
-            SampleUser user = defaultStore.getMember(userName, UserService.org);
             client = HFClient.createNewInstance();
             client.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
-            client.setUserContext(user);
-            HF_CLIENT_MAP.put(userName, client);
+            client.setUserContext(sampleUser);
         } catch (Exception e) {
             throw new RuntimeException(e);
+
         }
         return client;
     }

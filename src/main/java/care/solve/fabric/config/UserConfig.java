@@ -56,7 +56,7 @@ public class UserConfig {
 
     @Bean(name = "sampleUser")
     @Autowired
-    public SampleUser createpeerSampleUser(
+    public SampleUser createPeerSampleUser(
             @Qualifier("defaultStore") SampleStore sampleStore) throws InvalidKeySpecException, NoSuchAlgorithmException, NoSuchProviderException, IOException, EnrollmentException, InvalidArgumentException, URISyntaxException {
 
         HFProperties.Organization clinicOrg = hfProperties.getOrgs().get("clinic");

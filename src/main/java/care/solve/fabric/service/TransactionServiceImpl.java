@@ -2,7 +2,6 @@ package care.solve.fabric.service;
 
 import com.google.protobuf.ByteString;
 import org.hyperledger.fabric.sdk.BlockEvent;
-import org.hyperledger.fabric.sdk.ChaincodeID;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.ProposalResponse;
@@ -25,14 +24,14 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class TransactionServiceImpl implements TransactionService {
 
     private HFClientFactory hfClientFactory;
-    private ChaincodeID chaincodeId;
     private Channel healthChannel;
+    private ChaincodeService chaincodeService;
 
     @Autowired
-    public TransactionServiceImpl(HFClientFactory hfClientFactory, ChaincodeID chaincodeId, Channel healthChannel) {
+    public TransactionServiceImpl(HFClientFactory hfClientFactory, Channel healthChannel, ChaincodeService chaincodeService) {
         this.hfClientFactory = hfClientFactory;
-        this.chaincodeId = chaincodeId;
         this.healthChannel = healthChannel;
+        this.chaincodeService = chaincodeService;
     }
 
     public BlockEvent.TransactionEvent sendInvokeTransaction(String func, String[] args) {
@@ -40,7 +39,7 @@ public class TransactionServiceImpl implements TransactionService {
             HFClient client = hfClientFactory.getClient();
 
             TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
-            transactionProposalRequest.setChaincodeID(chaincodeId);
+            transactionProposalRequest.setChaincodeID(chaincodeService.queryLatestChaincodeId());
             transactionProposalRequest.setFcn(func);
             transactionProposalRequest.setProposalWaitTime(20000L);
             transactionProposalRequest.setArgs(args);
@@ -64,7 +63,7 @@ public class TransactionServiceImpl implements TransactionService {
             QueryByChaincodeRequest queryByChaincodeRequest = hfClientFactory.getClient().newQueryProposalRequest();
             queryByChaincodeRequest.setFcn(func);
             queryByChaincodeRequest.setArgs(args);
-            queryByChaincodeRequest.setChaincodeID(chaincodeId);
+            queryByChaincodeRequest.setChaincodeID(chaincodeService.queryLatestChaincodeId());
 
             Map<String, byte[]> tm2 = new HashMap<>();
             tm2.put("HyperLedgerFabric", "QueryByChaincodeRequest:JavaSDK".getBytes(UTF_8));
