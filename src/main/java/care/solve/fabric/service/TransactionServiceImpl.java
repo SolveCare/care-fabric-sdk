@@ -34,7 +34,7 @@ public class TransactionServiceImpl implements TransactionService {
         this.chaincodeService = chaincodeService;
     }
 
-    public BlockEvent.TransactionEvent sendInvokeTransaction(String func, String[] args) {
+    public byte[] sendInvokeTransaction(String func, String[] args) {
         try {
             HFClient client = hfClientFactory.getClient();
 
@@ -52,13 +52,13 @@ public class TransactionServiceImpl implements TransactionService {
 
             CompletableFuture<BlockEvent.TransactionEvent> proposalResponce = healthChannel.sendTransaction(transactionPropResp, client.getUserContext());
 
-            return proposalResponce.get();
+            return proposalResponce.get().getTransactionActionInfo(0).getProposalResponsePayload();
         } catch (InvalidArgumentException | ProposalException | InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public ByteString sendQueryTransaction(String func, String[] args) {
+    public byte[] sendQueryTransaction(String func, String[] args) {
         try {
             QueryByChaincodeRequest queryByChaincodeRequest = hfClientFactory.getClient().newQueryProposalRequest();
             queryByChaincodeRequest.setFcn(func);
@@ -80,7 +80,7 @@ public class TransactionServiceImpl implements TransactionService {
                     String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
                     System.out.println(String.format("Query payload from peer %s returned %s", proposalResponse.getPeer().getName(), payload));
 
-                    return proposalResponse.getProposalResponse().getResponse().getPayload();
+                    return proposalResponse.getProposalResponse().getResponse().getPayload().toByteArray();
                 }
             }
         } catch (InvalidArgumentException | ProposalException e) {
