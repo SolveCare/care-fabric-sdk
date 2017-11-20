@@ -37,7 +37,9 @@ public class ChaincodeController {
     public ChaincodeController(ChaincodeService chaincodeService,
                                UserService userService,
                                @Qualifier("peerAdminHFClient") HFClient peerAdminClient,
-                               Channel healthChannel, Orderer orderer, ObjectMapper mapper) {
+                               Channel healthChannel,
+                               Orderer orderer,
+                               ObjectMapper mapper) {
 
         this.chaincodeService = chaincodeService;
         this.userService = userService;
