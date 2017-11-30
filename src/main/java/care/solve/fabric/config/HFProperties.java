@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 @Configuration
-@PropertySource("classpath:fabric.properties")
+@PropertySource("classpath:fabric-dev.properties")
 @ConfigurationProperties(prefix = "fabric")
 @Data
 public class HFProperties {
