@@ -16,7 +16,7 @@ public class UserService {
     private SampleStore defaultStore;
     private SampleUser adminUser;
 
-    private HFProperties.Organization clinicOrg;
+    private HFProperties.Organization organization;
 
     public static final String org = "org1.department1";
 
@@ -26,14 +26,14 @@ public class UserService {
         this.defaultStore = defaultStore;
         this.adminUser = adminUser;
 
-        this.clinicOrg = hfProperties.getOrgs().get("clinic");
+        this.organization = hfProperties.getOrgs().get("individual");
     }
 
     public void registerUser(String userName) throws Exception {
         RegistrationRequest registrationRequest = new RegistrationRequest(userName, org);
         String enrollmentSecret = hfcaAdminClient.register(registrationRequest, adminUser);
         Enrollment enrollment = hfcaAdminClient.enroll(userName, enrollmentSecret);
-        defaultStore.getMember(userName, org, clinicOrg.getMspId(), enrollment.getKey(), enrollment.getCert());
+        defaultStore.getMember(userName, org, organization.getMspId(), enrollment.getKey(), enrollment.getCert());
     }
 
 }

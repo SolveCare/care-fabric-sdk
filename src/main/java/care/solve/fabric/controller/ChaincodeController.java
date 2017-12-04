@@ -9,11 +9,8 @@ import org.hyperledger.fabric.protos.peer.Query;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.Orderer;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/chaincode")
@@ -28,40 +26,41 @@ public class ChaincodeController {
 
     private ChaincodeService chaincodeService;
     private HFClient peerAdminClient;
-    private Channel healthChannel;
     private UserService userService;
     private Orderer orderer;
     private ObjectMapper mapper;
+    private Map<String, Channel> channelMap;
 
-    @Autowired
     public ChaincodeController(ChaincodeService chaincodeService,
                                UserService userService,
-                               @Qualifier("peerAdminHFClient") HFClient peerAdminClient,
-                               Channel healthChannel,
+                               HFClient peerAdminClient,
                                Orderer orderer,
-                               ObjectMapper mapper) {
+                               ObjectMapper mapper,
+                               Map<String, Channel> channelMap) {
 
         this.chaincodeService = chaincodeService;
         this.userService = userService;
         this.peerAdminClient = peerAdminClient;
-        this.healthChannel = healthChannel;
         this.orderer = orderer;
         this.mapper = mapper;
+        this.channelMap = channelMap;
     }
 
     @PostMapping(value = "upload")
     public void handleFileUpload(@RequestParam("file") MultipartFile file, @RequestParam("meta") String chaincodeMetaString) throws Exception {
         ChaincodeMeta chaincodeMeta = mapper.readValue(chaincodeMetaString, ChaincodeMeta.class);
 
-        List<Query.ChaincodeInfo> coll = healthChannel.queryInstantiatedChaincodes(healthChannel.getPeers().iterator().next());
+        Channel channel = channelMap.get(chaincodeMeta.getChannelName());
+
+        List<Query.ChaincodeInfo> coll = channel.queryInstantiatedChaincodes(channel.getPeers().iterator().next());
         if (!CollectionUtils.isEmpty(coll)) {
             throw new RuntimeException("Already installed");
         }
 
         File tarGzFile = new File("/tmp/" + file.getOriginalFilename());
         file.transferTo(tarGzFile);
-        chaincodeService.installChaincode(peerAdminClient, chaincodeMeta, healthChannel.getPeers(), tarGzFile);
-        chaincodeService.instantiateChaincode(peerAdminClient, chaincodeMeta, healthChannel, orderer);
+        chaincodeService.installChaincode(peerAdminClient, chaincodeMeta, channel.getPeers(), tarGzFile);
+        chaincodeService.instantiateChaincode(peerAdminClient, chaincodeMeta, channel, orderer);
 
     }
 
@@ -69,15 +68,17 @@ public class ChaincodeController {
     public void handleFileUpgrade(@RequestParam("file") MultipartFile file, @RequestParam("meta") String chaincodeMetaString) throws Exception {
         ChaincodeMeta chaincodeMeta = mapper.readValue(chaincodeMetaString, ChaincodeMeta.class);
 
-        List<Query.ChaincodeInfo> coll = healthChannel.queryInstantiatedChaincodes(healthChannel.getPeers().iterator().next());
+        Channel channel = channelMap.get(chaincodeMeta.getChannelName());
+
+        List<Query.ChaincodeInfo> coll = channel.queryInstantiatedChaincodes(channel.getPeers().iterator().next());
         if (CollectionUtils.isEmpty(coll)) {
             throw new RuntimeException("Install first");
         }
 
         File tarGzFile = new File("/tmp/" + file.getOriginalFilename());
         file.transferTo(tarGzFile);
-        chaincodeService.installChaincode(peerAdminClient, chaincodeMeta, healthChannel.getPeers(), tarGzFile);
-        chaincodeService.upgradeChaincode(peerAdminClient, chaincodeMeta,  healthChannel, orderer);
+        chaincodeService.installChaincode(peerAdminClient, chaincodeMeta, channel.getPeers(), tarGzFile);
+        chaincodeService.upgradeChaincode(peerAdminClient, chaincodeMeta,  channel, orderer);
     }
 
     @PostMapping("registerUsers")

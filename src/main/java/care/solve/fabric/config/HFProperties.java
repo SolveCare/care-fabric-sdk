@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 
 @Configuration
-@PropertySource("classpath:fabric.properties")
 @ConfigurationProperties(prefix = "fabric")
 @Data
 public class HFProperties {
@@ -53,7 +52,6 @@ public class HFProperties {
         private User admin;
         private List<User> users;
         private List<Peer> peers;
-        private List<Orderer> orderers;
         private CertificateAuthority ca;
     }
 
@@ -64,6 +62,8 @@ public class HFProperties {
     }
 
     private Map<String, Organization> orgs;
-    private Channel channel;
+    private List<Orderer> orderers;
+    private Channel privateChannel;
+    private Channel generalChannel;
     private String endorsementPolicy;
 }

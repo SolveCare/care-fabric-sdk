@@ -1,6 +1,5 @@
 package care.solve.fabric.service;
 
-import com.google.protobuf.ByteString;
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.HFClient;
@@ -24,33 +23,34 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class TransactionServiceImpl implements TransactionService {
 
     private HFClientFactory hfClientFactory;
-    private Channel healthChannel;
+    private Map<String, Channel> channelMap;
     private ChaincodeService chaincodeService;
 
     @Autowired
-    public TransactionServiceImpl(HFClientFactory hfClientFactory, Channel healthChannel, ChaincodeService chaincodeService) {
+    public TransactionServiceImpl(HFClientFactory hfClientFactory, Map<String, Channel> channelMap, ChaincodeService chaincodeService) {
         this.hfClientFactory = hfClientFactory;
-        this.healthChannel = healthChannel;
+        this.channelMap = channelMap;
         this.chaincodeService = chaincodeService;
     }
 
-    public byte[] sendInvokeTransaction(String func, String[] args) {
+    public byte[] sendInvokeTransaction(String channelName, String func, String[] args) {
+        Channel channel = channelMap.get(channelName);
         try {
             HFClient client = hfClientFactory.getClient();
 
             TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
-            transactionProposalRequest.setChaincodeID(chaincodeService.queryLatestChaincodeId());
+            transactionProposalRequest.setChaincodeID(chaincodeService.queryLatestChaincodeId(channel));
             transactionProposalRequest.setFcn(func);
             transactionProposalRequest.setProposalWaitTime(20000L);
             transactionProposalRequest.setArgs(args);
 
-            Collection<ProposalResponse> transactionPropResp = healthChannel.sendTransactionProposal(transactionProposalRequest, healthChannel.getPeers());
+            Collection<ProposalResponse> transactionPropResp = channel.sendTransactionProposal(transactionProposalRequest, channel.getPeers());
             long failedResponsesCount = transactionPropResp.stream().filter(resp -> !resp.getStatus().equals(ProposalResponse.Status.SUCCESS)).count();
             if (failedResponsesCount != 0) {
                 throw new RuntimeException(String.format("Failed transaction: %d failed from %d ", failedResponsesCount, transactionPropResp.size()));
             }
 
-            CompletableFuture<BlockEvent.TransactionEvent> proposalResponce = healthChannel.sendTransaction(transactionPropResp, client.getUserContext());
+            CompletableFuture<BlockEvent.TransactionEvent> proposalResponce = channel.sendTransaction(transactionPropResp, client.getUserContext());
 
             return proposalResponce.get().getTransactionActionInfo(0).getProposalResponsePayload();
         } catch (InvalidArgumentException | ProposalException | InterruptedException | ExecutionException e) {
@@ -58,19 +58,21 @@ public class TransactionServiceImpl implements TransactionService {
         }
     }
 
-    public byte[] sendQueryTransaction(String func, String[] args) {
+    public byte[] sendQueryTransaction(String channelName, String func, String[] args) {
+        Channel channel = channelMap.get(channelName);
+
         try {
             QueryByChaincodeRequest queryByChaincodeRequest = hfClientFactory.getClient().newQueryProposalRequest();
             queryByChaincodeRequest.setFcn(func);
             queryByChaincodeRequest.setArgs(args);
-            queryByChaincodeRequest.setChaincodeID(chaincodeService.queryLatestChaincodeId());
+            queryByChaincodeRequest.setChaincodeID(chaincodeService.queryLatestChaincodeId(channel));
 
             Map<String, byte[]> tm2 = new HashMap<>();
             tm2.put("HyperLedgerFabric", "QueryByChaincodeRequest:JavaSDK".getBytes(UTF_8));
             tm2.put("method", "QueryByChaincodeRequest".getBytes(UTF_8));
             queryByChaincodeRequest.setTransientMap(tm2);
 
-            Collection<ProposalResponse> queryProposals = healthChannel.queryByChaincode(queryByChaincodeRequest, healthChannel.getPeers());
+            Collection<ProposalResponse> queryProposals = channel.queryByChaincode(queryByChaincodeRequest, channel.getPeers());
             for (ProposalResponse proposalResponse : queryProposals) {
                 if (!proposalResponse.isVerified() || proposalResponse.getStatus() != ProposalResponse.Status.SUCCESS) {
                     System.out.println("Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus() +

@@ -40,12 +40,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class ChaincodeService {
 
     private ChaincodeProperties chaincodeProperties;
-    private Channel channel;
 
     @Autowired
-    public ChaincodeService(ChaincodeProperties chaincodeProperties, Channel channel) {
+    public ChaincodeService(ChaincodeProperties chaincodeProperties) {
         this.chaincodeProperties = chaincodeProperties;
-        this.channel = channel;
     }
 
     public void installChaincode(HFClient client, ChaincodeMeta chaincodeMeta, Collection<Peer> peers, File tarGzFile) throws InvalidArgumentException, ProposalException, IOException {
@@ -138,7 +136,7 @@ public class ChaincodeService {
         channel.sendTransaction(proposalResponses, ImmutableSet.of(orderer)).get();
     }
 
-    public ChaincodeID queryLatestChaincodeId() { //todo filter by name
+    public ChaincodeID queryLatestChaincodeId(Channel channel) { //todo filter by name
         try {
             List<Query.ChaincodeInfo> chaincodeInfos = channel.queryInstantiatedChaincodes(channel.getPeers().iterator().next());
             List<Query.ChaincodeInfo> sortedChaincodeInfos = chaincodeInfos.stream()

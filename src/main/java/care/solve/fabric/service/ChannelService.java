@@ -1,6 +1,5 @@
 package care.solve.fabric.service;
 
-import care.solve.fabric.config.HFProperties;
 import org.apache.commons.io.IOUtils;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.ChannelConfiguration;
@@ -12,7 +11,6 @@ import org.hyperledger.fabric.sdk.User;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
 import org.hyperledger.fabric.sdk.exception.TransactionException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -21,13 +19,6 @@ import java.util.List;
 
 @Service
 public class ChannelService {
-
-    private HFProperties hfProperties;
-
-    @Autowired
-    public ChannelService(HFProperties hfProperties) {
-        this.hfProperties = hfProperties;
-    }
 
     public boolean isChannelExists(String channelName, Peer peer, HFClient client) throws ProposalException, InvalidArgumentException {
         return client.queryChannels(peer).contains(channelName);
@@ -38,7 +29,8 @@ public class ChannelService {
             HFClient client,
             List<Peer> peers,
             Orderer orderer,
-            EventHub eventHub) throws InvalidArgumentException, TransactionException, ProposalException {
+            List<EventHub> eventHubs) throws InvalidArgumentException, TransactionException, ProposalException {
+
         Channel newChannel = client.newChannel(channelName);
 
         newChannel.addOrderer(orderer);
@@ -49,15 +41,29 @@ public class ChannelService {
                 e.printStackTrace();
             }
         });
-        newChannel.addEventHub(eventHub);
+        eventHubs.forEach(eventHub -> {
+            try {
+                newChannel.addEventHub(eventHub);
+            } catch (InvalidArgumentException e) {
+                e.printStackTrace();
+            }
+        });
 
         newChannel.initialize();
 
         return newChannel;
     }
 
-    public Channel constructChannel(String channelName, HFClient client, User user, List<Peer> peers, Orderer orderer, EventHub eventHub) throws IOException, InvalidArgumentException, TransactionException, ProposalException {
-        URL resource = ChannelService.class.getResource(hfProperties.getChannel().getGenesisBlockFile());
+    public Channel constructChannel(
+            String channelName,
+            HFClient client,
+            User user,
+            List<Peer> peers,
+            Orderer orderer,
+            List<EventHub> eventHubs,
+            String genesisBlockFileName) throws IOException, InvalidArgumentException, TransactionException, ProposalException {
+
+        URL resource = ChannelService.class.getResource(genesisBlockFileName);
         byte[] bytes = IOUtils.toByteArray(resource);
         ChannelConfiguration channelConfiguration = new ChannelConfiguration(bytes);
 
@@ -67,7 +73,13 @@ public class ChannelService {
                 channelConfiguration,
                 client.getChannelConfigurationSignature(channelConfiguration, user)
         );
-        newChannel.addEventHub(eventHub);
+        eventHubs.forEach(eventHub -> {
+            try {
+                newChannel.addEventHub(eventHub);
+            } catch (InvalidArgumentException e) {
+                e.printStackTrace();
+            }
+        });
         peers.forEach(peer -> {
             try {
                 newChannel.joinPeer(peer);

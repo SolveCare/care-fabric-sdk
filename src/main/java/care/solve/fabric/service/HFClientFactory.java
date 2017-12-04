@@ -15,11 +15,11 @@ public class HFClientFactory {
 
     private static final Map<String, HFClient> HF_CLIENT_MAP = new HashMap<>();
 
-    private User sampleUser;
+    private User individualPeerAdmin;
 
     @Autowired
-    public HFClientFactory(@Qualifier("sampleUser") User sampleUser) {
-        this.sampleUser = sampleUser;
+    public HFClientFactory(@Qualifier("individualPeerAdmin") User individualPeerAdmin) {
+        this.individualPeerAdmin = individualPeerAdmin;
     }
 
 
@@ -55,7 +55,7 @@ public class HFClientFactory {
         try {
             client = HFClient.createNewInstance();
             client.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
-            client.setUserContext(sampleUser);
+            client.setUserContext(individualPeerAdmin);
         } catch (Exception e) {
             throw new RuntimeException(e);
 

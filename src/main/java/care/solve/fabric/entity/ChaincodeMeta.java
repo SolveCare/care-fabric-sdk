@@ -12,5 +12,6 @@ public class ChaincodeMeta {
     private String name;
     private String path;
     private String version;
+    private String channelName;
 
 }
