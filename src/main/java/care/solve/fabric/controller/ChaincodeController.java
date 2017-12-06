@@ -27,21 +27,18 @@ public class ChaincodeController {
     private ChaincodeService chaincodeService;
     private HFClient peerAdminClient;
     private UserService userService;
-    private Orderer orderer;
     private ObjectMapper mapper;
     private Map<String, Channel> channelMap;
 
     public ChaincodeController(ChaincodeService chaincodeService,
                                UserService userService,
                                HFClient peerAdminClient,
-                               Orderer orderer,
                                ObjectMapper mapper,
                                Map<String, Channel> channelMap) {
 
         this.chaincodeService = chaincodeService;
         this.userService = userService;
         this.peerAdminClient = peerAdminClient;
-        this.orderer = orderer;
         this.mapper = mapper;
         this.channelMap = channelMap;
     }
@@ -60,7 +57,7 @@ public class ChaincodeController {
         File tarGzFile = new File("/tmp/" + file.getOriginalFilename());
         file.transferTo(tarGzFile);
         chaincodeService.installChaincode(peerAdminClient, chaincodeMeta, channel.getPeers(), tarGzFile);
-        chaincodeService.instantiateChaincode(peerAdminClient, chaincodeMeta, channel, orderer);
+        chaincodeService.instantiateChaincode(peerAdminClient, chaincodeMeta, channel);
 
     }
 
@@ -78,7 +75,7 @@ public class ChaincodeController {
         File tarGzFile = new File("/tmp/" + file.getOriginalFilename());
         file.transferTo(tarGzFile);
         chaincodeService.installChaincode(peerAdminClient, chaincodeMeta, channel.getPeers(), tarGzFile);
-        chaincodeService.upgradeChaincode(peerAdminClient, chaincodeMeta,  channel, orderer);
+        chaincodeService.upgradeChaincode(peerAdminClient, chaincodeMeta,  channel);
     }
 
     @PostMapping("registerUsers")

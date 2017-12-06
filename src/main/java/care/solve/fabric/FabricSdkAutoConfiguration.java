@@ -66,9 +66,8 @@ public class FabricSdkAutoConfiguration {
     public ChaincodeController chaincodeController(ChaincodeService chaincodeService,
                                                    UserService userService,
                                                    @Qualifier("individualPeerAdminHFClient") HFClient peerAdminClient,
-                                                   Orderer orderer,
                                                    Map<String, Channel> channelMap) {
         ObjectMapper mapper = new ObjectMapper();
-        return new ChaincodeController(chaincodeService, userService, peerAdminClient, orderer, mapper, channelMap);
+        return new ChaincodeController(chaincodeService, userService, peerAdminClient, mapper, channelMap);
     }
 }

@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
 import org.springframework.core.io.ClassPathResource;
 
 import java.io.IOException;
@@ -127,9 +128,9 @@ public class HFConfig {
             @Qualifier("defaultStore") SampleStore sampleStore,
             @Qualifier("individualPeerAdmin") SampleUser individualPeerAdmin) throws IOException, NoSuchAlgorithmException, NoSuchProviderException, InvalidKeySpecException {
         HFProperties.Organization organization = hfProperties.getOrgs().get("individual");
-        List<Peer> peers = organization.getPeers().stream()
-                .map(peerConf -> this.confToPeer(peerAdminHFClient, peerConf))
-                .collect(Collectors.toList());
+//        List<Peer> peers = organization.getPeers().stream()
+//                .map(peerConf -> this.confToPeer(peerAdminHFClient, peerConf))
+//                .collect(Collectors.toList());
         
         String userKeystoreFile = organization.getUsers().get(0).getKeystoreFile();
         String userCertFile = organization.getUsers().get(0).getCertFile();
@@ -138,9 +139,10 @@ public class HFConfig {
 
         return SampleOrganization.builder()
                 .name(organization.getName())
-                .peers(peers)
+                .peers(organization.getPeers())
                 .adminUser(individualPeerAdmin)
                 .user(user)
+                .peerAdminHFClient(peerAdminHFClient)
                 .build();
     }
 
@@ -150,9 +152,9 @@ public class HFConfig {
             @Qualifier("defaultStore") SampleStore sampleStore,
             @Qualifier("insurerPeerAdmin") SampleUser insurerPeerAdmin) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException, IOException {
         HFProperties.Organization organization = hfProperties.getOrgs().get("insurer");
-        List<Peer> peers = organization.getPeers().stream()
-                .map(peerConf -> this.confToPeer(peerAdminHFClient, peerConf))
-                .collect(Collectors.toList());
+//        List<Peer> peers = organization.getPeers().stream()
+//                .map(peerConf -> this.confToPeer(peerAdminHFClient, peerConf))
+//                .collect(Collectors.toList());
         
         String userKeystoreFile = organization.getUsers().get(0).getKeystoreFile();
         String userCertFile = organization.getUsers().get(0).getCertFile();
@@ -161,9 +163,10 @@ public class HFConfig {
 
         return SampleOrganization.builder()
                 .name(organization.getName())
-                .peers(peers)
+                .peers(organization.getPeers())
                 .adminUser(insurerPeerAdmin)
                 .user(user)
+                .peerAdminHFClient(peerAdminHFClient)
                 .build();
     }
 
@@ -173,9 +176,9 @@ public class HFConfig {
             @Qualifier("defaultStore") SampleStore sampleStore,
             @Qualifier("serviceProviderPeerAdmin") SampleUser serviceProviderPeerAdmin) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException, IOException {
         HFProperties.Organization organization = hfProperties.getOrgs().get("serviceprovider");
-        List<Peer> peers = organization.getPeers().stream()
-                .map(peerConf -> this.confToPeer(peerAdminHFClient, peerConf))
-                .collect(Collectors.toList());
+//        List<Peer> peers = organization.getPeers().stream()
+//                .map(peerConf -> this.confToPeer(peerAdminHFClient, peerConf))
+//                .collect(Collectors.toList());
 
         String userKeystoreFile = organization.getUsers().get(0).getKeystoreFile();
         String userCertFile = organization.getUsers().get(0).getCertFile();
@@ -184,9 +187,10 @@ public class HFConfig {
 
         return SampleOrganization.builder()
                 .name(organization.getName())
-                .peers(peers)
+                .peers(organization.getPeers())
                 .adminUser(serviceProviderPeerAdmin)
                 .user(user)
+                .peerAdminHFClient(peerAdminHFClient)
                 .build();
     }
 
@@ -225,9 +229,20 @@ public class HFConfig {
 //    * Orderers
 //    ***********************
 
-    @Bean(name = "orderer")
-    public Orderer constructOrderer(@Qualifier("individualPeerAdminHFClient") HFClient peerAdminHFClient) throws InvalidArgumentException, IOException {
+    @Bean(name = "orderer0")
+    public Orderer constructOrderer0(@Qualifier("individualPeerAdminHFClient") HFClient peerAdminHFClient) throws InvalidArgumentException, IOException {
         HFProperties.Orderer orderer = hfProperties.getOrderers().get(0);
+
+        return peerAdminHFClient.newOrderer(
+                orderer.getName(),
+                orderer.getGrpcUrl(),
+                constructOrdererProperties(orderer.getName(), orderer.getTlsCertFile())
+        );
+    }
+
+    @Bean(name = "orderer1")
+    public Orderer constructOrderer1(@Qualifier("individualPeerAdminHFClient") HFClient peerAdminHFClient) throws InvalidArgumentException, IOException {
+        HFProperties.Orderer orderer = hfProperties.getOrderers().get(1);
 
         return peerAdminHFClient.newOrderer(
                 orderer.getName(),
@@ -288,11 +303,12 @@ public class HFConfig {
     @Bean(name = "generalChannel")
     public Channel generalChannel(
             ChannelService channelService,
-            @Qualifier("individualPeerAdminHFClient") HFClient client,
+            @Qualifier("insurerPeerAdminHFClient") HFClient insurerClient,
+            @Qualifier("individualPeerAdminHFClient") HFClient individualClient,
             @Qualifier("individualOrganization") SampleOrganization individualOrganization,
             @Qualifier("insurerOrganization") SampleOrganization insurerOrganization,
             @Qualifier("serviceProviderOrganization") SampleOrganization serviceProviderOrganization,
-            @Qualifier("orderer") Orderer orderer,
+            @Qualifier("orderer0") Orderer orderer,
             @Qualifier("individualEventHub") EventHub individualEventHub,
             @Qualifier("insurerEventHub") EventHub insurerEventHub,
             @Qualifier("serviceProviderEventHub") EventHub serviceProviderEventHub,
@@ -302,20 +318,21 @@ public class HFConfig {
         String generalChannelName = generalChannelProps.getName();
 
         List<Peer> peers = new ArrayList<>();
+
         peers.addAll(individualOrganization.getPeers());
         peers.addAll(insurerOrganization.getPeers());
         peers.addAll(serviceProviderOrganization.getPeers());
 
         List<EventHub> eventHubs = new ArrayList<>();
-        eventHubs.add(individualEventHub);
+//        eventHubs.add(individualEventHub);
 //        eventHubs.add(insurerEventHub);
 //        eventHubs.add(serviceProviderEventHub);
 
         Channel channel;
-        if (channelService.isChannelExists(generalChannelName, individualOrganization.getPeers().get(0), client)) {
-            channel = channelService.connectToChannel(generalChannelName, client, peers, orderer, eventHubs);
+        if (channelService.isChannelExists(generalChannelName, individualOrganization.getPeers().get(0), individualClient)) {
+            channel = channelService.connectToChannel(generalChannelName, individualOrganization.getPeerAdminHFClient(), peers, orderer, eventHubs);
         } else {
-            channel = channelService.constructChannel(generalChannelName, client, individualOrganization.getAdminUser(), peers, orderer, eventHubs, generalChannelProps.getGenesisBlockFile());
+            channel = channelService.constructChannel(generalChannelName, insurerClient, insurerOrganization.getAdminUser(), insurerOrganization.getPeers(), orderer, eventHubs, generalChannelProps.getGenesisBlockFile());
         }
 
         channelMap.put(generalChannelName, channel);
@@ -328,7 +345,7 @@ public class HFConfig {
             @Qualifier("individualPeerAdminHFClient") HFClient client,
             @Qualifier("individualOrganization") SampleOrganization individualOrganization,
             @Qualifier("serviceProviderOrganization") SampleOrganization serviceProviderOrganization,
-            @Qualifier("orderer") Orderer orderer,
+            @Qualifier("orderer1") Orderer orderer,
             @Qualifier("individualEventHub") EventHub individualEventHub,
             @Qualifier("serviceProviderEventHub") EventHub serviceProviderEventHub,
             @Qualifier("channelMap") Map<String, Channel> channelMap) throws InvalidArgumentException, TransactionException, ProposalException, IOException {
@@ -341,12 +358,12 @@ public class HFConfig {
         peers.addAll(serviceProviderOrganization.getPeers());
 
         List<EventHub> eventHubs = new ArrayList<>();
-        eventHubs.add(individualEventHub);
+//        eventHubs.add(individualEventHub);
 //        eventHubs.add(serviceProviderEventHub);
 
         Channel channel;
         if (channelService.isChannelExists(privateChannelName, individualOrganization.getPeers().get(0), client)) {
-            channel = channelService.connectToChannel(privateChannelName, client, peers, orderer, eventHubs);
+            channel = channelService.connectToChannel(privateChannelName, client, individualOrganization.getPeers(), orderer, eventHubs);
         } else {
             channel = channelService.constructChannel(privateChannelName, client, individualOrganization.getAdminUser(), peers, orderer, eventHubs, privateChannelProps.getGenesisBlockFile());
         }

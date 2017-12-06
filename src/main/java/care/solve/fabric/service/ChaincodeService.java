@@ -77,7 +77,7 @@ public class ChaincodeService {
 
     }
 
-    public void instantiateChaincode(HFClient client, ChaincodeMeta chaincodeMeta, Channel channel, Orderer orderer) throws InvalidArgumentException, IOException, ChaincodeEndorsementPolicyParseException, ProposalException, ExecutionException, InterruptedException {
+    public void instantiateChaincode(HFClient client, ChaincodeMeta chaincodeMeta, Channel channel) throws InvalidArgumentException, IOException, ChaincodeEndorsementPolicyParseException, ProposalException, ExecutionException, InterruptedException {
         InstantiateProposalRequest instantiateProposalRequest = client.newInstantiationProposalRequest();
         ChaincodeID chaincodeID = ChaincodeID.newBuilder()
                 .setName(chaincodeMeta.getName())
@@ -104,10 +104,10 @@ public class ChaincodeService {
             }
         }
 
-        channel.sendTransaction(proposalResponses, ImmutableSet.of(orderer)).get();
+        channel.sendTransaction(proposalResponses).get();
     }
 
-    public void upgradeChaincode(HFClient client, ChaincodeMeta chaincodeMeta, Channel channel, Orderer orderer) throws InvalidArgumentException, ProposalException, IOException, ExecutionException, InterruptedException {
+    public void upgradeChaincode(HFClient client, ChaincodeMeta chaincodeMeta, Channel channel) throws InvalidArgumentException, ProposalException, IOException, ExecutionException, InterruptedException {
         UpgradeProposalRequest upgradeProposalRequest = client.newUpgradeProposalRequest();
         upgradeProposalRequest.setProposalWaitTime(20000L);
         ChaincodeID chaincodeID = ChaincodeID.newBuilder()
@@ -133,7 +133,7 @@ public class ChaincodeService {
             }
         }
 
-        channel.sendTransaction(proposalResponses, ImmutableSet.of(orderer)).get();
+        channel.sendTransaction(proposalResponses).get();
     }
 
     public ChaincodeID queryLatestChaincodeId(Channel channel) { //todo filter by name
