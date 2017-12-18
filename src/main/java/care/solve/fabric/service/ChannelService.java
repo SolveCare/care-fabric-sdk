@@ -15,8 +15,8 @@ import org.hyperledger.fabric.sdk.exception.TransactionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.URL;
 import java.util.List;
 
 @Service
@@ -57,8 +57,8 @@ public class ChannelService {
     }
 
     public Channel constructChannel(String channelName, HFClient client, User user, List<Peer> peers, Orderer orderer, EventHub eventHub) throws IOException, InvalidArgumentException, TransactionException, ProposalException {
-        URL resource = ChannelService.class.getResource(hfProperties.getChannel().getGenesisBlockFile());
-        byte[] bytes = IOUtils.toByteArray(resource);
+        FileInputStream genesisBlockInputStream = new FileInputStream(hfProperties.getChannel().getGenesisBlockFile());
+        byte[] bytes = IOUtils.toByteArray(genesisBlockInputStream);
         ChannelConfiguration channelConfiguration = new ChannelConfiguration(bytes);
 
         Channel newChannel = client.newChannel(

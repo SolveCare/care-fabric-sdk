@@ -13,6 +13,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
@@ -41,8 +43,8 @@ public class UserConfig {
         String peerAdminKeystoreFile = clinicOrg.getAdmin().getKeystoreFile();
         String peerAdminCertFile = clinicOrg.getAdmin().getCertFile();
 
-        InputStream keystoreFile = new ClassPathResource(peerAdminKeystoreFile).getInputStream();
-        InputStream certFile = new ClassPathResource(peerAdminCertFile).getInputStream();
+        InputStream keystoreFile = new FileInputStream(peerAdminKeystoreFile);
+        InputStream certFile = new FileInputStream(peerAdminCertFile);
 
         SampleUser peerAdmin = sampleStore.getMember(
                 "peerAdmin",
@@ -63,8 +65,8 @@ public class UserConfig {
         String userKeystoreFile = clinicOrg.getUsers().get(0).getKeystoreFile();
         String userCertFile = clinicOrg.getUsers().get(0).getCertFile();
 
-        InputStream keystoreFile = new ClassPathResource(userKeystoreFile).getInputStream();
-        InputStream certFile = new ClassPathResource(userCertFile).getInputStream();
+        InputStream keystoreFile = new FileInputStream(userKeystoreFile);
+        InputStream certFile = new FileInputStream(userCertFile);
 
         SampleUser user = sampleStore.getMember(
                 "user",

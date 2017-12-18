@@ -1,7 +1,12 @@
 package care.solve.fabric.config;
 
 import care.solve.fabric.service.ChannelService;
-import org.hyperledger.fabric.sdk.*;
+import org.hyperledger.fabric.sdk.Channel;
+import org.hyperledger.fabric.sdk.EventHub;
+import org.hyperledger.fabric.sdk.HFClient;
+import org.hyperledger.fabric.sdk.Orderer;
+import org.hyperledger.fabric.sdk.Peer;
+import org.hyperledger.fabric.sdk.User;
 import org.hyperledger.fabric.sdk.exception.CryptoException;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
@@ -17,6 +22,7 @@ import org.springframework.context.annotation.Configuration;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.List;
 import java.util.Properties;
@@ -105,10 +111,9 @@ public class HFConfig {
     }
 
     public Properties constructPeerProperties(final String peerName, final String peerTLSCertFile) {
-        URL resource = HFConfig.class.getResource(peerTLSCertFile);
 
         Properties properties = new Properties();
-        properties.setProperty("pemFile", resource.toString());
+        properties.setProperty("pemFile", peerTLSCertFile);
         properties.setProperty("hostnameOverride", peerName);
         properties.setProperty("sslProvider", "openSSL");
         properties.setProperty("negotiationType", "TLS");
@@ -117,10 +122,8 @@ public class HFConfig {
     }
 
     public Properties constructOrdererProperties(String ordererName, String ordererTlsCertFile) throws IOException {
-        URL resource = HFConfig.class.getResource(ordererTlsCertFile);
-
         Properties properties = new Properties();
-        properties.setProperty("pemFile", resource.toString());
+        properties.setProperty("pemFile", ordererTlsCertFile);
         properties.setProperty("hostnameOverride", ordererName);
         properties.setProperty("sslProvider", "openSSL");
         properties.setProperty("negotiationType", "TLS");

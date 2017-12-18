@@ -4,13 +4,11 @@ package care.solve.fabric.config;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
 
 import java.util.List;
 import java.util.Map;
 
 @Configuration
-@PropertySource("classpath:fabric.properties")
 @ConfigurationProperties(prefix = "fabric")
 @Data
 public class HFProperties {
@@ -66,4 +64,6 @@ public class HFProperties {
     private Map<String, Organization> orgs;
     private Channel channel;
     private String endorsementPolicy;
+
+    private String rootFolder;
 }
